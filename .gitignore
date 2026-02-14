@@ -1,0 +1,19 @@
+# Laravel/PMS ignore
+/vendor
+/node_modules
+npm-debug.log
+yarn-error.log
+.env
+.env.backup
+.env.production
+*.log
+.DS_Store
+Thumbs.db
+.phpunit.cache
+.php-cs-fixer.cache
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+~*

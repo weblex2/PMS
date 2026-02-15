@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gästeverwaltung - PMS</title>
+    <title>Zimmerarten - PMS</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -12,6 +12,7 @@
         .nav { padding: 0 10px; }
         .nav-link { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.8); text-decoration: none; border-radius: 8px; margin-bottom: 5px; transition: all 0.3s; }
         .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: rgba(255,255,255,0.2); color: white; }
         .nav-link i { width: 25px; font-size: 18px; }
         .main-content { margin-left: 250px; flex: 1; padding: 30px; }
         .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
@@ -35,16 +36,12 @@
         .action-btns { display: flex; gap: 8px; }
         .empty-state { text-align: center; padding: 60px 20px; color: #718096; }
         .empty-state i { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
-        .badge { display: inline-flex; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-        .badge-success { background: #c6f6d5; color: #276749; }
-        .badge-warning { background: #feebc8; color: #c05621; }
         
         @media (max-width: 768px) {
             .sidebar { width: 60px; }
             .main-content { margin-left: 60px; }
             .nav-link span { display: none; }
-            table { font-size: 12px; }
-            th, td { padding: 8px; }
+            .nav-link i { width: auto; }
         }
     </style>
 </head>
@@ -52,8 +49,8 @@
     @include('components.sidebar')
     <main class="main-content">
         <div class="header-row">
-            <h1>Gästeverwaltung</h1>
-            <a href="/guests/create" class="btn btn-primary"><i class="fa fa-plus"></i> Neuer Gast</a>
+            <h1>Zimmerarten</h1>
+            <a href="/room-types/create" class="btn btn-primary"><i class="fa fa-plus"></i> Neue Zimmerart</a>
         </div>
         
         @if(session('success'))
@@ -63,46 +60,28 @@
         @endif
         
         <div class="card">
-            @if($guests->count() > 0)
+            @if($roomTypes->count() > 0)
             <table>
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Vorname</th>
-                        <th>Herkunft</th>
-                        <th>Aufenthalt</th>
-                        <th>E-Mail</th>
-                        <th>Telefon</th>
+                        <th>Betten</th>
+                        <th>Beschreibung</th>
                         <th style="width: 120px;">Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($guests as $guest)
+                    @foreach($roomTypes as $type)
                     <tr>
-                        <td><strong>{{ $guest->name }}</strong></td>
-                        <td>{{ $guest->vorname ?? '-' }}</td>
-                        <td>
-                            @if($guest->nation1)
-                                <span class="badge badge-success">{{ $guest->nation1 }}</span>
-                            @else
-                                -
-                            @endif
-                        </td>
-                        <td>
-                            @if($guest->nation2)
-                                <span class="badge badge-warning">{{ $guest->nation2 }}</span>
-                            @else
-                                -
-                            @endif
-                        </td>
-                        <td>{{ $guest->email ?? '-' }}</td>
-                        <td>{{ $guest->phone ?? '-' }}</td>
+                        <td><strong>{{ $type->name }}</strong></td>
+                        <td>{{ $type->bed_count }}</td>
+                        <td>{{ $type->description ?? '-' }}</td>
                         <td class="action-btns">
-                            <a href="/guests/{{ $guest->id }}/edit" class="btn btn-secondary btn-sm"><i class="fa fa-pencil"></i></a>
-                            <form action="/guests/{{ $guest->id }}" method="POST" style="display:inline;">
+                            <a href="/room-types/{{ $type->id }}/edit" class="btn btn-secondary btn-sm"><i class="fa fa-pencil"></i></a>
+                            <form action="/room-types/{{ $type->id }}" method="POST" style="display:inline;">
                                 @csrf
                                 @method('DELETE')
-                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Gast wirklich löschen?');"><i class="fa fa-trash"></i></button>
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Zimmerart wirklich löschen?');"><i class="fa fa-trash"></i></button>
                             </form>
                         </td>
                     </tr>
@@ -111,9 +90,9 @@
             </table>
             @else
                 <div class="empty-state">
-                    <i class="fa fa-users"></i>
-                    <h3>Keine Gäste vorhanden</h3>
-                    <p>Erstellen Sie Ihren ersten Gast.</p>
+                    <i class="fa fa-bed"></i>
+                    <h3>Keine Zimmerarten vorhanden</h3>
+                    <p>Erstellen Sie Ihre erste Zimmerart.</p>
                 </div>
             @endif
         </div>

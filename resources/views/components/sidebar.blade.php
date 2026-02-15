@@ -33,6 +33,12 @@
                 <a href="/articles" class="nav-link">
                     <i class="fa fa-box"></i> Artikel
                 </a>
+                <a href="/prices" class="nav-link">
+                    <i class="fa fa-tag"></i> Preise
+                </a>
+                <a href="/room-types" class="nav-link">
+                    <i class="fa fa-bed"></i> Zimmerarten
+                </a>
             </div>
         </div>
         <a href="/invoices" class="nav-link">
@@ -42,6 +48,15 @@
             <i class="fa fa-chart-bar"></i> Berichte
         </a>
     </nav>
+    
+    <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: auto 10px 10px 10px;"></div>
+    
+    <form action="/logout" method="POST" style="padding: 0 10px 20px 10px;">
+        @csrf
+        <button type="submit" style="width: 100%; display: flex; align-items: center; padding: 12px 15px; color: rgba(255,100,100,0.8); text-decoration: none; border-radius: 8px; transition: all 0.3s; background: none; border: none; cursor: pointer; font-size: 14px;">
+            <i class="fa fa-sign-out-alt" style="width: 25px; font-size: 18px;"></i> Abmelden
+        </button>
+    </form>
 </aside>
 
 <style>
@@ -70,9 +85,28 @@
 .nav-dropdown.open .nav-dropdown-content {
     display: block;
 }
+.nav-dropdown.open > .nav-dropdown-header {
+    background: rgba(255,255,255,0.1);
+    color: white;
+}
 </style>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Check current URL and open corresponding dropdown
+    const currentPath = window.location.pathname;
+    const dropdowns = document.querySelectorAll('.nav-dropdown');
+    
+    dropdowns.forEach(dropdown => {
+        const links = dropdown.querySelectorAll('.nav-dropdown-content a');
+        links.forEach(link => {
+            if (link.getAttribute('href') === currentPath) {
+                dropdown.classList.add('open');
+            }
+        });
+    });
+});
+
 function toggleDropdown(element) {
     element.parentElement.classList.toggle('open');
 }

@@ -38,7 +38,7 @@
     </style>
 </head>
 <body>
-    <x-sidebar />
+    @include('components.sidebar')
     <main class="main-content">
         <h1>Reservierungen <a href="/reservations/create" class="btn"><i class="fa fa-plus"></i> Neue Reservierung</a></h1>
         

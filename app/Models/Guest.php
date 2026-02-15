@@ -8,6 +8,10 @@ class Guest extends Model
 {
     protected $fillable = [
         'name',
+        'vorname',
+        'nation1',
+        'nation2',
+        'match',
         'email',
         'phone',
         'address',

@@ -1,63 +1,111 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>Preislisten - PMS</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:"Segoe UI",system-ui,sans-serif;background:linear-gradient(135deg,#0f0f23 0%,#1a1a3e 50%,#0d0d2b 100%);min-height:100vh;color:#fff}
-.container{max-width:1200px;margin:0 auto;padding:30px 20px}
-h1{font-size:2.5rem;font-weight:700;margin-bottom:20px;background:linear-gradient(135deg,#667eea,#f093fb);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.nav{display:flex;gap:10px;margin-bottom:30px}
-.nav a{color:#fff;text-decoration:none;padding:10px 20px;background:rgba(255,255,255,0.1);border-radius:8px}
-.card{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:20px;margin-bottom:20px}
-table{width:100%;border-collapse:collapse;background:rgba(255,255,255,0.05);border-radius:12px}
-th,td{padding:12px 15px;text-align:left;border-bottom:1px solid rgba(255,255,255,0.1)}
-th{background:rgba(255,255,255,0.1);color:#a0a0b0}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:8px;color:#fff;border:none;cursor:pointer}
-input,select{width:100%;padding:10px 15px;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:8px;color:#fff}
-.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:15px;margin-bottom:15px}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preise - PMS</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f5f5f5; display: flex; min-height: 100vh; }
+        .sidebar { width: 250px; background: linear-gradient(180deg, #1e3a5f 0%, #0d2137 100%); color: white; padding: 20px 0; position: fixed; height: 100vh; overflow-y: auto; }
+        .nav { padding: 0 10px; }
+        .nav-link { display: flex; align-items: center; padding: 12px 15px; color: rgba(255,255,255,0.8); text-decoration: none; border-radius: 8px; margin-bottom: 5px; transition: all 0.3s; }
+        .nav-link:hover { background: rgba(255,255,255,0.1); color: white; }
+        .nav-link.active { background: rgba(255,255,255,0.2); color: white; }
+        .nav-link i { width: 25px; font-size: 18px; }
+        .main-content { margin-left: 250px; flex: 1; padding: 30px; }
+        .card { background: white; border-radius: 12px; padding: 25px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1 { margin-bottom: 25px; color: #1e3a5f; }
+        
+        .header-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .btn { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; transition: all 0.3s; }
+        .btn-primary { background: #1e3a5f; color: white; }
+        .btn-primary:hover { background: #2c5282; }
+        .btn-secondary { background: #718096; color: white; }
+        .btn-secondary:hover { background: #4a5568; }
+        .btn-danger { background: #e53e3e; color: white; }
+        .btn-danger:hover { background: #c53030; }
+        .btn-sm { padding: 6px 12px; font-size: 12px; }
+        
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 15px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        th { background: #f7fafc; font-weight: 600; color: #4a5568; }
+        tr:hover { background: #f7fafc; }
+        
+        .action-btns { display: flex; gap: 8px; }
+        .empty-state { text-align: center; padding: 60px 20px; color: #718096; }
+        .empty-state i { font-size: 48px; margin-bottom: 15px; opacity: 0.5; }
+        
+        @media (max-width: 768px) {
+            .sidebar { width: 60px; }
+            .main-content { margin-left: 60px; }
+            .nav-link span { display: none; }
+            .nav-link i { width: auto; }
+        }
+    </style>
 </head>
 <body>
-<div class=container>
-<h1>💵 Preislisten</h1>
-<div class=nav>
-<a href="/"><i class="fas fa-home"></i> Dashboard</a>
-<a href="/articles"><i class="fas fa-box"></i> Artikel</a>
-<a href="/prices" class=active><i class="fas fa-tags"></i> Preislisten</a>
-</div>
-
-<div class=card>
-<h3>Neue Preisliste</h3>
-<form method="POST" action="/prices">
-@csrf
-<div class=form-row>
-<input type="text" name="name" placeholder="Name" required>
-<input type="text" name="code" placeholder="Code" required>
-<input type="date" name="valid_from" required>
-<input type="date" name="valid_until" required>
-</div>
-<button type="submit" class=btn><i class="fas fa-save"></i> Erstellen</button>
-</form>
-</div>
-
-<div class=card>
-<table>
-<tr><th>Name</th><th>Code</th><th>Gültig von</th><th>Bis</th></tr>
-@forelse(\ ?? \[] as \)
-<tr>
-<td>{{ \->name }}</td>
-<td>{{ \->code }}</td>
-<td>{{ \->valid_from }}</td>
-<td>{{ \->valid_until }}</td>
-</tr>
-@empty
-<tr><td colspan=4 style="text-align:center;color:#a0a0b0">Keine Preislisten</td></tr>
-@endforelse
-</table>
-</div>
-</div>
+    @include('components.sidebar')
+    <main class="main-content">
+        <div class="header-row">
+            <h1>Preise</h1>
+            <a href="/prices/create" class="btn btn-primary"><i class="fa fa-plus"></i> Neuer Preis</a>
+        </div>
+        
+        @if(session('success'))
+            <div class="card" style="background: #c6f6d5; color: #276749; padding: 15px; margin-bottom: 20px; border-radius: 8px;">
+                {{ session('success') }}
+            </div>
+        @endif
+        
+        <div class="card">
+            @if($prices->count() > 0)
+            <table>
+                <thead>
+                    <tr>
+                        <th>Artikel</th>
+                        <th>Preis</th>
+                        <th>Typ</th>
+                        <th>Gültig ab</th>
+                        <th>Gültig bis</th>
+                        <th style="width: 120px;">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($prices as $price)
+                    <tr>
+                        <td><strong>{{ $price->article->name }}</strong><br><small style="color: #718096;">{{ $price->article->article_number }}</small></td>
+                        <td style="font-weight: bold; color: #276749;">{{ number_format($price->price, 2, ',', '.') }} EUR</td>
+                        <td>
+                            @if($price->price_type == 'selling')
+                                <span style="background: #c6f6d5; color: #276749; padding: 4px 10px; border-radius: 20px; font-size: 12px;">Verkauf</span>
+                            @else
+                                <span style="background: #bee3f8; color: #2b6cb0; padding: 4px 10px; border-radius: 20px; font-size: 12px;">Einkauf</span>
+                            @endif
+                        </td>
+                        <td>{{ $price->valid_from->format('d.m.Y') }}</td>
+                        <td>{{ $price->valid_until ? $price->valid_until->format('d.m.Y') : 'unbegrenzt' }}</td>
+                        <td class="action-btns">
+                            <a href="/prices/{{ $price->id }}/edit" class="btn btn-secondary btn-sm"><i class="fa fa-pencil"></i></a>
+                            <form action="/prices/{{ $price->id }}" method="POST" style="display:inline;">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Preis wirklich löschen?');"><i class="fa fa-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+            @else
+                <div class="empty-state">
+                    <i class="fa fa-tag"></i>
+                    <h3>Keine Preise vorhanden</h3>
+                    <p>Erstellen Sie Ihren ersten Preis.</p>
+                </div>
+            @endif
+        </div>
+    </main>
 </body>
 </html>

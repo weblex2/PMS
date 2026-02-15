@@ -60,7 +60,7 @@
     </style>
 </head>
 <body>
-    <x-sidebar />
+    @include('components.sidebar')
     <main class="main-content">
         <h1>Reservierung bearbeiten: {{ $reservation->reservation_number }}</h1>
         

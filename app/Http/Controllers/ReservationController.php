@@ -26,23 +26,47 @@ class ReservationController extends Controller
     {
         $validated = $request->validate([
             'guest_id' => 'required|exists:guests,id',
-            'room_id' => 'required|exists:rooms,id',
+            'room_ids' => 'required|array|min:1',
+            'room_ids.*' => 'exists:rooms,id',
             'check_in' => 'required|date',
             'check_out' => 'required|date|after:check_in',
             'adults' => 'integer|min:1',
             'children' => 'integer|min:0',
+            'payment_method' => 'required|in:cash,card,transfer,online',
+            'payment_status' => 'required|in:pending,paid,advance',
+            'advance_payment' => 'numeric|min:0',
+            'reservation_type' => 'required|in:standard,group,business,event',
+            'notes' => 'nullable|string',
         ]);
 
-        $validated['reservation_number'] = 'RES-' . strtoupper(uniqid());
-        $validated['status'] = 'confirmed';
-        
-        // Calculate total price
-        $room = Room::find($validated['room_id']);
         $days = \Carbon\Carbon::parse($validated['check_in'])->diffInDays($validated['check_out']);
-        $validated['total_price'] = $room->price * $days;
+        $created = 0;
 
-        Reservation::create($validated);
-        return redirect()->route('reservations.index')->with('success', 'Reservierung erfolgreich erstellt.');
+        foreach ($validated['room_ids'] as $roomId) {
+            $room = Room::find($roomId);
+            $totalPrice = $room->price * $days;
+            
+            Reservation::create([
+                'reservation_number' => 'RES-' . strtoupper(uniqid()),
+                'guest_id' => $validated['guest_id'],
+                'room_id' => $roomId,
+                'check_in' => $validated['check_in'],
+                'check_out' => $validated['check_out'],
+                'status' => 'confirmed',
+                'total_price' => $totalPrice,
+                'adults' => $validated['adults'],
+                'children' => $validated['children'] ?? 0,
+                'payment_status' => $validated['payment_status'],
+                'payment_method' => $validated['payment_method'],
+                'advance_payment' => $validated['advance_payment'] ?? 0,
+                'reservation_type' => $validated['reservation_type'],
+                'notes' => $validated['notes'] ?? null,
+            ]);
+            $created++;
+        }
+
+        return redirect()->route('reservations.index')
+            ->with('success', $created . ' Reservierung(en) erfolgreich erstellt.');
     }
 
     public function edit(Reservation $reservation)

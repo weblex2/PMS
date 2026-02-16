@@ -47,7 +47,7 @@ Route::resource('room-types', App\Http\Controllers\RoomTypeController::class);
 Route::resource('reservations', App\Http\Controllers\ReservationController::class);
 
 // PMS Original Routes
-Route::get("/users", function () { return view("users.index"); });
+Route::resource("users", App\Http\Controllers\UserController::class);
 Route::get("/invoices", function () { return view("invoices.index"); });
 Route::get("/reports", function () { return view("reports.index"); });
 

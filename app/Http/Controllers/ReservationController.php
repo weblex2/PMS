@@ -77,6 +77,8 @@ class ReservationController extends Controller
             'payment_method' => $request->input('payment_method', 'cash'),
             'reservation_type' => $request->input('reservation_type', 'standard'),
             'notes' => $request->input('notes'),
+            'match1' => $request->input('match1'),
+            'match2' => $request->input('match2'),
         ];
 
         $days = \Carbon\Carbon::parse($validated['check_in'])->diffInDays($validated['check_out']);
@@ -155,6 +157,9 @@ class ReservationController extends Controller
             'adults' => (int)$request->input('adults', 1),
             'children' => (int)$request->input('children', 0),
             'payment_status' => $request->input('payment_status', 'pending'),
+            'notes' => $request->input('notes'),
+            'match1' => $request->input('match1'),
+            'match2' => $request->input('match2'),
         ];
 
         $days = \Carbon\Carbon::parse($validated['check_in'])->diffInDays($validated['check_out']);

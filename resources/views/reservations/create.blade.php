@@ -87,6 +87,10 @@ input,select,textarea{width:100%;padding:8px;border:1px solid #ddd;border-radius
 <div class="form-group"><label>Check-in *</label><input type="date" name="check_in" value="{{ $checkIn }}" required></div>
 <div class="form-group"><label>Check-out *</label><input type="date" name="check_out" value="{{ $checkOut }}" required></div>
 </div>
+<div class="grid-2">
+<div class="form-group"><label>Match 1</label><input type="text" name="match1" maxlength="50"></div>
+<div class="form-group"><label>Match 2</label><input type="text" name="match2" maxlength="50"></div>
+</div>
 <div class="grid-3">
 <div class="form-group"><label>Erwachsene *</label><input type="number" name="adults" value="1" min="1" required></div>
 <div class="form-group"><label>Kinder</label><input type="number" name="children" value="0" min="0"></div>

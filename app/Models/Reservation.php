@@ -16,6 +16,8 @@ class Reservation extends Model
         'status',
         'total_price',
         'notes',
+        'match1',
+        'match2',
         'adults',
         'children',
         'payment_status',

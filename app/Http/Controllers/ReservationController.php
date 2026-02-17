@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Reservation;
+use App\Models\ReservationPath;
 use App\Models\Guest;
 use App\Models\Room;
 use Illuminate\Http\Request;
@@ -11,7 +12,7 @@ class ReservationController extends Controller
 {
     public function index()
     {
-        $reservations = Reservation::with(['guest', 'rooms'])->get();
+        $reservations = Reservation::with(['guest', 'paths.rooms'])->get();
         return view('reservations.index', compact('reservations'));
     }
 
@@ -23,40 +24,11 @@ class ReservationController extends Controller
         $guests = Guest::all();
         $allRooms = Room::all();
         
-        $bookedRoomIds = Reservation::where(function ($query) use ($checkIn, $checkOut) {
-            $query->where(function ($q) use ($checkIn, $checkOut) {
-                $q->where('check_in', '<', $checkOut)->where('check_out', '>', $checkIn);
-            });
-        })->where('status', '!=', 'cancelled')->pluck('room_id')->toArray();
-        
-        $allRooms = $allRooms->map(function ($room) use ($bookedRoomIds) {
-            $room->is_booked = in_array($room->id, $bookedRoomIds);
-            $room->is_available = !$room->is_booked;
-            return $room;
-        });
-        
-        $guestsJson = json_encode($guests->map(function($g) {
-            return ['id' => $g->id, 'name' => $g->name, 'email' => $g->email];
-        }));
-        
-        return view('reservations.create', compact('guests', 'allRooms', 'guestsJson', 'checkIn', 'checkOut'));
+        return view('reservations.create', compact('guests', 'allRooms', 'checkIn', 'checkOut'));
     }
 
     public function store(Request $request)
     {
-        $validRoomIds = Room::pluck('id')->toArray();
-        $inputIds = $request->input('room_ids', []);
-        
-        $roomIds = array_filter($inputIds, function($id) use ($validRoomIds) {
-            $id = (int)$id;
-            return in_array($id, $validRoomIds) && $id >= 1 && $id <= 31;
-        });
-        $roomIds = array_values(array_unique($roomIds));
-        
-        if (empty($roomIds)) {
-            return back()->withError('Bitte gueltige Zimmer auswaehlen.');
-        }
-        
         $errors = [];
         if (empty($request->input('guest_id'))) $errors[] = 'Gast ist erforderlich.';
         if (empty($request->input('check_in'))) $errors[] = 'Check-in ist erforderlich.';
@@ -74,25 +46,12 @@ class ReservationController extends Controller
             'adults' => (int)$request->input('adults', 1),
             'children' => (int)$request->input('children', 0),
             'payment_status' => $request->input('payment_status', 'pending'),
-            'payment_method' => $request->input('payment_method', 'cash'),
             'reservation_type' => $request->input('reservation_type', 'standard'),
-            'notes' => $request->input('notes'),
             'match1' => $request->input('match1'),
             'match2' => $request->input('match2'),
         ];
 
         $days = \Carbon\Carbon::parse($validated['check_in'])->diffInDays($validated['check_out']);
-        
-        $totalPrice = 0;
-        $roomPrices = [];
-        foreach ($roomIds as $roomId) {
-            $room = Room::find($roomId);
-            $price = $room->price * $days;
-            $roomPrices[$roomId] = ['price' => $price];
-            $totalPrice += $price;
-        }
-        
-        $validated['total_price'] = $totalPrice;
         
         $reservation = Reservation::create([
             'reservation_number' => 'RES-' . strtoupper(bin2hex(random_bytes(6))),
@@ -100,16 +59,39 @@ class ReservationController extends Controller
             'check_in' => $validated['check_in'],
             'check_out' => $validated['check_out'],
             'status' => $validated['status'],
-            'total_price' => $validated['total_price'],
+            'total_price' => 0,
             'adults' => $validated['adults'],
             'children' => $validated['children'],
             'payment_status' => $validated['payment_status'],
-            'payment_method' => $validated['payment_method'],
             'reservation_type' => $validated['reservation_type'],
-            'notes' => $validated['notes'],
+            'match1' => $validated['match1'],
+            'match2' => $validated['match2'],
         ]);
         
-        $reservation->rooms()->attach($roomPrices);
+        $path = ReservationPath::create([
+            'reservation_id' => $reservation->id,
+            'path_number' => 1,
+            'check_in' => $validated['check_in'],
+            'check_out' => $validated['check_out'],
+        ]);
+        
+        $roomIds = $request->input('room_ids', []);
+        if (!empty($roomIds)) {
+            $roomPrices = [];
+            foreach ($roomIds as $roomId) {
+                $room = Room::find((int)$roomId);
+                if ($room) {
+                    $roomPrices[(int)$roomId] = ['price' => $room->price * $days];
+                }
+            }
+            if (!empty($roomPrices)) {
+                $path->rooms()->attach($roomPrices);
+            }
+        }
+        
+        $reservation->update(['total_price' => $path->rooms->sum(function($room) {
+            return $room->pivot->price;
+        })]);
 
         return redirect()->route('reservations.index')
             ->with('success', 'Reservierung erfolgreich erstellt.');
@@ -117,27 +99,70 @@ class ReservationController extends Controller
 
     public function edit($id)
     {
-        $reservation = Reservation::with(['guest', 'rooms'])->findOrFail($id);
+        $reservation = Reservation::with(['guest', 'paths.rooms'])->findOrFail($id);
         $guests = Guest::all();
         $rooms = Room::all();
+        
+        if ($reservation->paths->isEmpty()) {
+            ReservationPath::create([
+                'reservation_id' => $reservation->id,
+                'path_number' => 1,
+                'check_in' => $reservation->check_in,
+                'check_out' => $reservation->check_out,
+            ]);
+            $reservation->load('paths.rooms');
+        }
+        
+        $checkIn = $reservation->check_in;
+        $checkOut = $reservation->check_out;
+        
+        $currentPathRoomIds = $reservation->paths->flatMap(function ($p) {
+            return $p->rooms->pluck('id');
+        })->toArray();
+        
+        $bookedRoomIds = ReservationPath::whereHas('reservation', function ($query) use ($checkIn, $checkOut, $id) {
+            $query->where('check_in', '<', $checkOut)
+                  ->where('check_out', '>', $checkIn)
+                  ->where('id', '!=', $id);
+        })->where('reservation_id', '!=', $id)
+          ->with('rooms')
+          ->get()
+          ->flatMap(function ($path) {
+              return $path->rooms->pluck('id');
+          })
+          ->unique()
+          ->toArray();
+        
+        $rooms = $rooms->map(function ($room) use ($bookedRoomIds, $currentPathRoomIds) {
+            $room->is_in_reservation = in_array($room->id, $currentPathRoomIds);
+            $room->is_booked = in_array($room->id, $bookedRoomIds) && !in_array($room->id, $currentPathRoomIds);
+            $room->is_available = !$room->is_booked && !$room->is_in_reservation;
+            return $room;
+        });
+        
         return view('reservations.edit', compact('reservation', 'guests', 'rooms'));
     }
 
     public function update(Request $request, $id)
     {
-        $reservation = Reservation::findOrFail($id);
+        $reservation = Reservation::with('paths')->findOrFail($id);
         
-        $validRoomIds = Room::pluck('id')->toArray();
-        $inputIds = $request->input('room_ids', []);
+        if ($request->input('add_path')) {
+            $pathCount = $reservation->paths()->count();
+            ReservationPath::create([
+                'reservation_id' => $reservation->id,
+                'path_number' => $pathCount + 1,
+                'check_in' => $request->input('check_in'),
+                'check_out' => $request->input('check_out'),
+            ]);
+            return back()->with('success', 'Pfad hinzugefuegt.');
+        }
         
-        $roomIds = array_filter($inputIds, function($id) use ($validRoomIds) {
-            $id = (int)$id;
-            return in_array($id, $validRoomIds) && $id >= 1 && $id <= 31;
-        });
-        $roomIds = array_values(array_unique($roomIds));
-        
-        if (empty($roomIds)) {
-            return back()->withError('Bitte gueltige Zimmer auswaehlen.');
+        foreach ($reservation->paths as $path) {
+            if ($request->input('delete_path_' . $path->id)) {
+                $path->delete();
+                return back()->with('success', 'Pfad geloescht.');
+            }
         }
         
         $errors = [];
@@ -149,7 +174,7 @@ class ReservationController extends Controller
             return back()->withErrors($errors);
         }
         
-        $validated = [
+        $reservation->update([
             'guest_id' => (int)$request->input('guest_id'),
             'check_in' => $request->input('check_in'),
             'check_out' => $request->input('check_out'),
@@ -157,36 +182,56 @@ class ReservationController extends Controller
             'adults' => (int)$request->input('adults', 1),
             'children' => (int)$request->input('children', 0),
             'payment_status' => $request->input('payment_status', 'pending'),
-            'notes' => $request->input('notes'),
             'match1' => $request->input('match1'),
             'match2' => $request->input('match2'),
-        ];
-
-        $days = \Carbon\Carbon::parse($validated['check_in'])->diffInDays($validated['check_out']);
+        ]);
         
         $totalPrice = 0;
-        $roomPrices = [];
-        foreach ($roomIds as $roomId) {
-            $room = Room::find($roomId);
-            if (!$room) continue;
-            $price = $room->price * $days;
-            $roomPrices[$roomId] = ['price' => $price];
-            $totalPrice += $price;
+        
+        foreach ($reservation->paths as $path) {
+            $pathCheckIn = $request->input('paths.' . $path->id . '.check_in');
+            $pathCheckOut = $request->input('paths.' . $path->id . '.check_out');
+            
+            if ($pathCheckIn && $pathCheckOut) {
+                $pathDays = \Carbon\Carbon::parse($pathCheckIn)->diffInDays($pathCheckOut);
+                $path->update([
+                    'check_in' => $pathCheckIn,
+                    'check_out' => $pathCheckOut,
+                ]);
+            } else {
+                $pathDays = \Carbon\Carbon::parse($path->check_in)->diffInDays($path->check_out);
+            }
+            
+            $roomIds = $request->input('paths.' . $path->id . '.room_ids', []);
+            $roomPrices = [];
+            
+            foreach ($roomIds as $roomId) {
+                $room = Room::find((int)$roomId);
+                if ($room) {
+                    $roomPrices[(int)$roomId] = ['price' => $room->price * $pathDays];
+                }
+            }
+            
+            $path->rooms()->sync($roomPrices);
+            
+            $pathTotal = $path->rooms->sum(function($room) {
+                return $room->pivot->price;
+            });
+            $totalPrice += $pathTotal;
         }
         
-        $validated['total_price'] = $totalPrice;
-        
-        $reservation->update($validated);
-        $reservation->rooms()->sync($roomPrices);
+        $reservation->update(['total_price' => $totalPrice]);
 
-        return redirect()->route('reservations.index')->with('success', 'Reservierung erfolgreich aktualisiert.');
+        return redirect()->route('reservations.index')
+            ->with('success', 'Reservierung erfolgreich aktualisiert.');
     }
 
     public function destroy($id)
     {
         $reservation = Reservation::findOrFail($id);
-        $reservation->rooms()->detach();
         $reservation->delete();
-        return redirect()->route('reservations.index')->with('success', 'Reservierung erfolgreich geloescht.');
+        
+        return redirect()->route('reservations.index')
+            ->with('success', 'Reservierung geloescht.');
     }
 }

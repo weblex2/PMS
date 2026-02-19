@@ -49,31 +49,19 @@
                 <div class="grid-2">
                     <div class="form-group">
                         <label>Artikelnummer *</label>
-                        <input type="text" name="article_number" value="{{ old('article_number') }}" required>
+                        <input type="text" name="article_number" value="{{ old(article_number) }}" required>
                     </div>
                     <div class="form-group">
                         <label>Name *</label>
-                        <input type="text" name="name" value="{{ old('name') }}" required>
+                        <input type="text" name="name" value="{{ old(name) }}" required>
                     </div>
                     <div class="form-group" style="grid-column: span 2;">
                         <label>Beschreibung</label>
-                        <textarea name="description" rows="3">{{ old('description') }}</textarea>
-                    </div>
-                    <div class="form-group">
-                        <label>Einkaufspreis (EK) *</label>
-                        <input type="number" name="purchase_price" step="0.01" value="{{ old('purchase_price') }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Verkaufspreis (VK) *</label>
-                        <input type="number" name="selling_price" step="0.01" value="{{ old('selling_price') }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Lagerbestand</label>
-                        <input type="number" name="stock" value="{{ old('stock', 0) }}">
+                        <textarea name="description" rows="3">{{ old(description) }}</textarea>
                     </div>
                     <div class="form-group">
                         <label>Kategorie</label>
-                        <input type="text" name="category" value="{{ old('category') }}">
+                        <input type="text" name="category" value="{{ old(category) }}">
                     </div>
                 </div>
                 <div style="margin-top: 20px;">

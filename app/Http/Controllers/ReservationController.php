@@ -23,8 +23,11 @@ class ReservationController extends Controller
         
         $guests = Guest::all();
         $allRooms = Room::all();
+        $guestsJson = json_encode($guests->map(function($g) {
+            return ['id' => $g->id, 'name' => $g->name, 'email' => $g->email];
+        }));
         
-        return view('reservations.create', compact('guests', 'allRooms', 'checkIn', 'checkOut'));
+        return view('reservations.create', compact('guests', 'allRooms', 'guestsJson', 'checkIn', 'checkOut'));
     }
 
     public function store(Request $request)
@@ -158,9 +161,9 @@ class ReservationController extends Controller
             return back()->with('success', 'Pfad hinzugefuegt.');
         }
         
-        foreach ($reservation->paths as $path) {
-            if ($request->input('delete_path_' . $path->id)) {
-                $path->delete();
+        foreach ($reservation->paths as $Path) {
+            if ($request->input('delete_path_' . $Path->id)) {
+                $Path->delete();
                 return back()->with('success', 'Pfad geloescht.');
             }
         }
@@ -188,21 +191,21 @@ class ReservationController extends Controller
         
         $totalPrice = 0;
         
-        foreach ($reservation->paths as $path) {
-            $pathCheckIn = $request->input('paths.' . $path->id . '.check_in');
-            $pathCheckOut = $request->input('paths.' . $path->id . '.check_out');
+        foreach ($reservation->paths as $Path) {
+            $pathCheckIn = $request->input('paths.' . $Path->id . '.check_in');
+            $pathCheckOut = $request->input('paths.' . $Path->id . '.check_out');
             
             if ($pathCheckIn && $pathCheckOut) {
                 $pathDays = \Carbon\Carbon::parse($pathCheckIn)->diffInDays($pathCheckOut);
-                $path->update([
+                $Path->update([
                     'check_in' => $pathCheckIn,
                     'check_out' => $pathCheckOut,
                 ]);
             } else {
-                $pathDays = \Carbon\Carbon::parse($path->check_in)->diffInDays($path->check_out);
+                $pathDays = \Carbon\Carbon::parse($Path->check_in)->diffInDays($Path->check_out);
             }
             
-            $roomIds = $request->input('paths.' . $path->id . '.room_ids', []);
+            $roomIds = $request->input('paths.' . $Path->id . '.room_ids', []);
             $roomPrices = [];
             
             foreach ($roomIds as $roomId) {
@@ -212,9 +215,9 @@ class ReservationController extends Controller
                 }
             }
             
-            $path->rooms()->sync($roomPrices);
+            $Path->rooms()->sync($roomPrices);
             
-            $pathTotal = $path->rooms->sum(function($room) {
+            $pathTotal = $Path->rooms->sum(function($room) {
                 return $room->pivot->price;
             });
             $totalPrice += $pathTotal;

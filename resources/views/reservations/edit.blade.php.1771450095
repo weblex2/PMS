@@ -11,11 +11,11 @@
 
 <div class="card">
 <div class="tabs">
-<button type="button" class="tab active" onclick="showTab(event, 'general')">Allgemein</button>
-<button type="button" class="tab" onclick="showTab(event, 'guest')">Gast</button>
-<button type="button" class="tab" onclick="showTab(event, 'rooms')">Zimmer</button>
-<button type="button" class="tab" onclick="showTab(event, 'paths')">Pfade</button>
-<button type="button" class="tab" onclick="showTab(event, 'payment')">Zahlung</button>
+<button type="button" class="tab active" onclick="showTab('general')">Allgemein</button>
+<button type="button" class="tab" onclick="showTab('guest')">Gast</button>
+<button type="button" class="tab" onclick="showTab('rooms')">Zimmer</button>
+<button type="button" class="tab" onclick="showTab('paths')">Pfade</button>
+<button type="button" class="tab" onclick="showTab('payment')">Zahlung</button>
 </div>
 
 <form action="/reservations/{{ $reservation->id }}" method="POST" id="resForm">
@@ -56,7 +56,7 @@
 <div class="form-group"><label>Gast *</label>
 <select class="form-control" name="guest_id" required>
 @foreach($guests as $guest)
-<option value="{{ $guest->id }}" {{ $reservation->guest_id == $guest->id ? 'selected' : '' }}>{{ $guest->name }}</option>
+<option value="{{ $guest->id }}" {{ $reservation->guest_id == $guest->id ? 'selected' : '' }}>{{ $guest->name }} ({{ $guest->match1 ?? $guest->name }})</option>
 @endforeach
 </select></div>
 </div>
@@ -64,9 +64,9 @@
 <div id="tab-rooms" class="tab-content">
 <h3>Zimmer zuordnen</h3>
 
-<div class="room-tabs">
+<div class="tabs" style="background:#f8f9fa;padding:10px;border-radius:8px;margin-bottom:15px;">
 @foreach($reservation->paths as $index => $path)
-<button type="button" class="room-tab {{ $index === 0 ? 'active' : '' }}" onclick="showRoomTab(event, {{ $path->id }})" id="roomTab-{{ $path->id }}">
+<button type="button" class="room-tab tab {{ $index === 0 ? 'active' : '' }}" onclick="showRoomTab({{ $path->id }})" id="roomTab-{{ $path->id }}">
 Pfad {{ $path->path_number }} ({{ $path->check_in->format('d.m.') }}-{{ $path->check_out->format('d.m.') }}) <span class="badge badge-success">{{ $path->rooms->count() }}</span>
 </button>
 @endforeach
@@ -75,6 +75,7 @@ Pfad {{ $path->path_number }} ({{ $path->check_in->format('d.m.') }}-{{ $path->c
 @foreach($reservation->paths as $index => $path)
 <div class="room-tab-content {{ $index === 0 ? 'active' : '' }}" id="roomContent-{{ $path->id }}" data-path="{{ $path->id }}">
 <?php 
+// Get unique bed counts from rooms collection
 $uniqueBedCounts = $rooms->pluck('bed_count')->unique()->sort()->values();
 ?>
 <div class="type-filters">
@@ -84,17 +85,17 @@ $uniqueBedCounts = $rooms->pluck('bed_count')->unique()->sort()->values();
 @endforeach
 </div>
 <div class="room-list">
-<div class="room-list-header"><div class="checkbox-cell"></div><div>Zimmer</div><div>Typ</div><div>Preis</div><div>Status</div></div>
+<div class="room-list-header"><div style="width:40px;"></div><div>Zimmer</div><div>Typ</div><div>Preis</div><div>Status</div></div>
 <?php $pathRoomIds = $path->rooms->pluck('id')->toArray(); ?>
 @foreach($rooms->sortBy('room_number') as $room)
 <?php $isSelected = in_array($room->id, $pathRoomIds); ?>
 <div class="room-list-item {{ $isSelected ? 'selected' : '' }}" data-type="{{ $room->type }}" data-bed-count="{{ $room->bed_count }}" data-id="{{ $room->id }}" onclick="toggleRoom(this)">
-<div class="checkbox-cell">
+<div style="width:40px;">
 <input type="checkbox" class="room-checkbox" name="paths[{{ $path->id }}][room_ids][]" value="{{ $room->id }}" {{ $isSelected ? 'checked' : '' }} onclick="event.stopPropagation(); toggleRoom(this.parentElement.parentElement);">
 </div>
 <div class="room-info"><h4>Nr. {{ $room->room_number }}</h4><p>{{ $room->type }}</p></div>
 <div><span class="room-badge">{{ $room->bed_count }} Betten</span></div>
-<div class="price">{{ number_format($room->price,2,',','.') }} EUR</div>
+<div style="font-weight:600;color:#28a745">{{ number_format($room->price,2,',','.') }} EUR</div>
 <div>
 <span class="room-badge {{ $room->is_in_reservation ? 'badge-confirmed' : ($room->is_available ? 'badge-available' : 'badge-occupied') }}">
 {{ $room->is_in_reservation ? 'Zugewiesen' : ($room->is_available ? 'Frei' : 'Belegt') }}
@@ -108,17 +109,17 @@ $uniqueBedCounts = $rooms->pluck('bed_count')->unique()->sort()->values();
 </div>
 
 <div id="tab-paths" class="tab-content">
-<div class="path-header">
-<h3>Pfade verwalten</h3>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:15px;">
+<h3 style="margin:0;">Pfade verwalten</h3>
 <button type="button" class="btn" onclick="addPath()">+ Neuer Pfad</button>
 </div>
 
 @foreach($reservation->paths as $path)
-<div class="card path-card">
-<div class="path-header">
-<h4 class="path-title">Pfad {{ $path->path_number }}</h4>
+<div class="card" style="margin-bottom:15px;padding:15px;">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+<h4 style="margin:0;">Pfad {{ $path->path_number }}</h4>
 @if($reservation->paths->count() > 1)
-<button type="button" class="btn btn-sm btn-danger" onclick="deletePath({{ $path->id }})">Loeschen</button>
+<button type="button" class="btn btn-sm" style="background:#dc3545" onclick="deletePath({{ $path->id }})">Loeschen</button>
 @endif
 </div>
 <div class="grid-2">
@@ -128,11 +129,11 @@ $uniqueBedCounts = $rooms->pluck('bed_count')->unique()->sort()->values();
 <input class="form-control" type="date" name="paths[{{ $path->id }}][check_out]" value="{{ $path->check_out->format('Y-m-d') }}"></div>
 </div>
 <div class="form-group"><label>Zimmer ({{ $path->rooms->count() }})</label>
-<div class="room-tags">
+<div style="display:flex;flex-wrap:wrap;gap:5px;">
 @forelse($path->rooms as $room)
-<span class="badge badge-confirmed room-tag">{{ $room->room_number }}</span>
+<span class="badge badge-confirmed" style="padding:5px 10px;font-size:14px;">{{ $room->room_number }}</span>
 @empty
-<span class="no-rooms">Keine Zimmer zugewiesen</span>
+<span style="color:#666;">Keine Zimmer zugewiesen</span>
 @endforelse
 </div>
 </div>
@@ -149,29 +150,40 @@ $uniqueBedCounts = $rooms->pluck('bed_count')->unique()->sort()->values();
 <option value="paid" {{ $reservation->payment_status=='paid'?'selected':'' }}>Bezahlt</option>
 </select></div>
 <div class="form-group"><label>Preis</label>
-<input class="form-control disabled-price" type="text" value="{{ number_format($reservation->total_price,2,',','.') }} EUR" disabled></div>
+<input class="form-control" type="text" value="{{ number_format($reservation->total_price,2,',','.') }} EUR" disabled style="background:#e9ecef;"></div>
 </div>
 </div>
 
-<div class="form-actions">
+<div style="margin-top:20px">
 <button type="submit" class="btn">Speichern</button>
-<a href="/reservations" class="btn btn-cancel">Abbrechen</a>
+<a href="/reservations" class="btn" style="background:#6c757d">Abbrechen</a>
 </div>
 </form>
 </div>
 
+<style>
+.room-tab { background:#fff;border:1px solid #dee2e6;padding:8px 15px;margin-right:5px;border-radius:5px;cursor:pointer; }
+.room-tab.active { background:#007bff;color:#fff;border-color:#007bff; }
+.room-tab .badge { margin-left:5px;background:rgba(255,255,255,0.3); }
+.room-tab.active .badge { background:#28a745; }
+.room-tab-content { display:none; }
+.room-tab-content.active { display:block; }
+.badge-confirmed { background:#28a745;color:#fff; }
+.badge-available { background:#d4edda;color:#155724; }
+.badge-occupied { background:#f8d7da;color:#721c24; }
+.type-filters { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; }
+.type-filter { padding: 6px 12px; background: #f3f4f6; border: none; border-radius: 6px; cursor: pointer; font-size: 12px; }
+.type-filter.active { background: #1e3a5f; color: white; }
+</style>
+
 <script>
-function showTab(e, tab) {
-    e.preventDefault();
-    var btn = e.currentTarget;
+function showTab(tab) {
     document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
     document.getElementById('tab-' + tab).classList.add('active');
-    btn.classList.add('active');
+    event.target.classList.add('active');
 }
-function showRoomTab(e, pathId) {
-    e.preventDefault();
-    var btn = e.currentTarget;
+function showRoomTab(pathId) {
     document.querySelectorAll('.room-tab').forEach(x => x.classList.remove('active'));
     document.querySelectorAll('.room-tab-content').forEach(x => x.classList.remove('active'));
     document.getElementById('roomTab-' + pathId).classList.add('active');

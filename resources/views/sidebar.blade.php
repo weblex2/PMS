@@ -42,6 +42,9 @@
                 <a href="/room-types" class="nav-link">
                     <i class="fa fa-bed"></i> Zimmerarten
                 </a>
+                <a href="/users" class="nav-link">
+                    <i class="fa fa-user-cog"></i> Benutzer
+                </a>
             </div>
         </div>
         <a href="/invoices" class="nav-link">

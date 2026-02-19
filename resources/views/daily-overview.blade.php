@@ -1,0 +1,111 @@
+@extends('layouts.pms')
+
+@section('content')
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="page-header" style="font-size: 1.75rem;">Tagesübersicht</h1>
+        <div class="d-flex align-items-center gap-2">
+            <a href="{{ route('tagesuebersicht', ['date' => $prevDate]) }}" class="btn btn-secondary">
+                <i class="fas fa-chevron-left"></i> Zurück
+            </a>
+            <span style="font-size: 1.1rem; font-weight: 500; padding: 0 15px;">
+                {{ $startDate->format('d.m.Y') }} - {{ $startDate->copy()->addDays(6)->format('d.m.Y') }}
+            </span>
+            <a href="{{ route('tagesuebersicht', ['date' => $nextDate]) }}" class="btn btn-secondary">
+                Weiter <i class="fas fa-chevron-right"></i>
+            </a>
+            <a href="{{ route('tagesuebersicht') }}" class="btn btn-primary">
+                <i class="fas fa-calendar-alt"></i> Heute
+            </a>
+        </div>
+    </div>
+
+    <div class="card" style="overflow-x: auto;">
+        <div class="card-body" style="padding: 0;">
+            <table style="width: 100%; min-width: 1200px; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 15px; text-align: left; font-weight: 600; border-bottom: 2px solid #dee2e6; min-width: 150px; position: sticky; left: 0; background: #f8f9fa; z-index: 1;">
+                            Zimmer
+                        </th>
+                        @foreach($dateRange as $date)
+                        <th style="padding: 15px; text-align: center; font-weight: 600; border-bottom: 2px solid #dee2e6; min-width: 140px;">
+                            <div style="font-size: 0.85rem; color: #6c757d;">{{ $date->locale('de')->dayName }}</div>
+                            <div style="font-size: 1.1rem;">{{ $date->format('d.m.') }}</div>
+                        </th>
+                        @endforeach
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($rooms as $room)
+                    <tr style="border-bottom: 1px solid #dee2e6;">
+                        <td style="padding: 12px 15px; font-weight: 500; border-right: 2px solid #dee2e6; position: sticky; left: 0; background: white; z-index: 1;">
+                            {{ $room->room_number }}
+                            @if($room->roomType)
+                            <div style="font-size: 0.8rem; color: #6c757d;">{{ $room->roomType->name }}</div>
+                            @endif
+                        </td>
+                        @foreach($dateRange as $date)
+                        @php
+                            $reservationForRoom = null;
+                            $pathForRoom = null;
+                            
+                            foreach($reservations as $res) {
+                                foreach($res->paths as $path) {
+                                    // Hole die Zimmer-IDs für diesen Pfad
+                                    $roomIds = $path->rooms->pluck('id')->toArray();
+                                    
+                                    if (in_array($room->id, $roomIds)) {
+                                        $checkIn = \Carbon\Carbon::parse($path->check_in)->startOfDay();
+                                        $checkOut = \Carbon\Carbon::parse($path->check_out)->startOfDay();
+                                        
+                                        if ($date->gte($checkIn) && $date->lt($checkOut)) {
+                                            $reservationForRoom = $res;
+                                            $pathForRoom = $path;
+                                            break 2;
+                                        }
+                                    }
+                                }
+                            }
+                        @endphp
+                        <td style="padding: 8px; text-align: center; border-right: 1px solid #e9ecef;">
+                            @if($reservationForRoom)
+                            <div style="background: #c6f6d5; color: #276749; padding: 8px 12px; border-radius: 8px; font-size: 0.85rem;">
+                                <div style="font-weight: 600;">
+                                    @if($reservationForRoom->guest)
+                                        {{ $reservationForRoom->guest->firstname }} {{ $reservationForRoom->guest->lastname }}
+                                    @else
+                                        {{ $reservationForRoom->reservation_number }}
+                                    @endif
+                                </div>
+                                <div style="font-size: 0.75rem; opacity: 0.8;">
+                                    {{ $reservationForRoom->reservation_number }} / Pfad {{ $pathForRoom->path_number }}
+                                </div>
+                            </div>
+                            @else
+                            <div style="color: #adb5bd; font-size: 0.85rem;">
+                                <i class="fas fa-bed" style="font-size: 1.2rem; opacity: 0.5;"></i>
+                            </div>
+                            @endif
+                        </td>
+                        @endforeach
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Legende -->
+    <div class="d-flex gap-4 mt-3" style="margin-top: 15px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+        <div class="d-flex align-items-center gap-2">
+            <div style="width: 20px; height: 20px; background: #c6f6d5; border-radius: 4px;"></div>
+            <span style="font-size: 0.9rem;">Belegt</span>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <div style="width: 20px; height: 20px; background: white; border: 1px solid #dee2e6; border-radius: 4px;"></div>
+            <span style="font-size: 0.9rem;">Frei</span>
+        </div>
+    </div>
+</div>
+@endsection

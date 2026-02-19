@@ -9,16 +9,13 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Article extends Model
 {
     protected $fillable = [
-        'article_number',
-        'name',
-        'description',
-        'purchase_price',
-        'selling_price',
-        'stock',
-        'category',
+        "article_number",
+        "name",
+        "description",
+        "category",
     ];
     
-    protected $table = 'articles';
+    protected $table = "articles";
     
     public function prices(): HasMany
     {
@@ -27,20 +24,20 @@ class Article extends Model
     
     public function rooms(): BelongsToMany
     {
-        return $this->belongsToMany(Room::class, 'room_articles')
-                    ->withPivot('quantity')
+        return $this->belongsToMany(Room::class, "room_articles")
+                    ->withPivot("quantity")
                     ->withTimestamps();
     }
     
     public function getCurrentPriceAttribute()
     {
         return $this->prices()
-            ->where('valid_from', '<=', now())
+            ->where("valid_from", "<=", now())
             ->where(function ($query) {
-                $query->where('valid_until', '>=', now())
-                      ->orWhereNull('valid_until');
+                $query->where("valid_until", ">=", now())
+                      ->orWhereNull("valid_until");
             })
-            ->orderBy('valid_from', 'desc')
-            ->first() ?? $this->selling_price;
+            ->orderBy("valid_from", "desc")
+            ->first();
     }
 }

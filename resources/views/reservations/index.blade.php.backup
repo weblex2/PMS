@@ -1,5 +1,6 @@
 @extends('layouts.pms')
 @section('content')
+@include('components.sidebar')
 <main>
 <h1>Reservierungen <a href="/reservations/create" class="btn"><i class="fa fa-plus"></i> Neue Reservierung</a></h1>
 <div class="card">

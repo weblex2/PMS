@@ -42,7 +42,7 @@ class DailyOverviewController extends Controller
         }
 
         $prevDate = (clone $startDate)->subDays(1)->format('Y-m-d');
-        $nextDate = (clone $startDate)->addDays(7)->format('Y-m-d');
+        $nextDate = (clone $startDate)->addDays(1)->format('Y-m-d');
 
         return view('daily-overview', compact('rooms', 'reservations', 'dateRange', 'startDate', 'prevDate', 'nextDate'));
     }

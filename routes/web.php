@@ -59,6 +59,9 @@ Route::resource("users", App\Http\Controllers\UserController::class);
 Route::get("/invoices", function () { return view("invoices.index"); });
 Route::get("/reports", function () { return view("reports.index"); });
 
+
+// Kunden CRUD
+Route::resource("kunden", App\Http\Controllers\KundeController::class);
 // Firms CRUD
 Route::resource("firms", App\Http\Controllers\FirmController::class);
 Route::post("/firms/{id}/switch", [App\Http\Controllers\FirmController::class, "switch"])->name("firms.switch");
